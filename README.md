@@ -17,11 +17,11 @@ Zugehöriges Projekt: https://github.com/users/DieWaldfee/projects/1
 
 **Installation:**
 * Hostname, WLAN-SSID + WLAN-Passwort setzen in /ESP32DevKitV4/PowerGuard.ino <br>
-&nbsp;&nbsp;&nbsp;<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/8d82d4cc-97bd-45e2-9087-7bd85dd3fe94" width="300">
+&nbsp;&nbsp;&nbsp;<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/75a4b105-765c-4cfd-9f36-0deae3ae548b" width="300">
 * MQTT-Brokereinstellungen setzen in /ESP32DevKitV4/PowerGuard.ino <br>
-&nbsp;&nbsp;&nbsp;<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/4bdda754-68f7-475a-8669-c389b18ff35a" height="100">
+&nbsp;&nbsp;&nbsp;<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/897f06d6-190b-4414-a3dd-f5e2cfde511d" height="100">
 * MQTT-Pfade setzen in /ESP32DevKitV4/PowerGuard.ino <br>
-&nbsp;&nbsp;&nbsp;<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/e8671429-b80d-4a7d-809b-9bdb9c047c20" height="100">
+&nbsp;&nbsp;&nbsp;<img src="[https://github.com/DieWaldfee/PowerGuard/assets/66571311/e8671429-b80d-4a7d-809b-9bdb9c047c20](https://github.com/DieWaldfee/PowerGuard/assets/66571311/4f8c1ffd-b743-4ed1-b313-fc14fc3ef089)" height="100">
 * bei Fehlern kann in Zeile 13 der Debug-Level für die Ausgaben auf den serial Monitor eingestellt werden: 0 = BootUp only; 1 = Basic; 2 = Advanced; 3 = Absolut
 * ESP-Software wird über die Arduino-IDE aus das "ESP32 Dev Kit V4" compiliert und übertragen.
 * Platine entweder via Eagle an PCB-Hersteller übermitteln, oder das fertige CAM-File über die Anbieter-Webseite senden. (z.B. an https://jlcpcb.com)
