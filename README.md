@@ -11,7 +11,7 @@ Fokus der PCB V2.0 ist die Platine mit über einen PCB-Hersteller umzusetzen.
 Die CAM-Datei ist passend für https://jlcpcb.com. Stand 03.11.2023 ist die Platine für 2$ (5 St.) bestellbar.
 In der BOM findet sich die Stückliste für die Bestückung wieder.
 
-<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/27bb17e4-c70e-40e7-adc7-ea61fb46f8e1" width="500">
+<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/1c389b38-95ca-4472-810e-c5202d421479" width="500">
 
 Zugehöriges Projekt: https://github.com/users/DieWaldfee/projects/1
 
