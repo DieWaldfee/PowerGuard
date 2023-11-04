@@ -63,3 +63,10 @@ Zugehöriges Projekt: https://github.com/users/DieWaldfee/projects/1
 * Klemmbuchse <a href="https://www.amazon.de/gp/product/B087RN8FDZ/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&th=1"> Amazon </a>
 * Widerstände 4,7kOhm, 220 Ohm, 330 Ohm, Led grün, gelb und rot Amazon / eBay / Conrad...
 * Temperatursensoren DS18B20 <a href="https://www.az-delivery.de/products/2er-set-ds18b20-mit-3m-kabel"> AZ Delivery </a>
+
+**fertige Platine:**
+
+![grafik](https://github.com/DieWaldfee/PowerGuard/assets/66571311/2c3fc57b-6fb9-496c-9dd0-f728c895b6c9)
+
+![grafik](https://github.com/DieWaldfee/PowerGuard/assets/66571311/cb0928ba-aea0-4322-a46b-0f89a735b46d)
+(oberes Relais steuert +5V -> Heizstabsteuerung; unteres Relais steuert die 12V für die SSR-40-DA Lastschaltrelais)
