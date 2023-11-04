@@ -3,8 +3,8 @@ PowerGuard-Platine und Software zur Sicherheitsüberwachung einer Heizstabsteuer
 
 **zugehörige Repositories**<br>
 - PowerGuard (dieses Repository)
-- Heizstabsteuerung (Steuerungsplatine Link)
-- Heizstab_ioBroker (Ansteuerungs-Blockly - ein MQTT-Broker wird benötigt)
+- Heizstabsteuerung (Steuerungsplatine <a href="https://github.com/DieWaldfee/Heizstabsteuerung"> Link </a>)
+- Heizstab_ioBroker (Ansteuerungs-Blockly - ein MQTT-Broker wird benötigt - Link)
 
 **Funktion:** <br>
 Der ESP32 steuert 2 Temperatursensoren (DS18B20) an und liest diese aus. Die beiden Sensoren sollen am höchsten Punkt des Pufferspeichers der Heizung angebracht werden, in dem auch der elektrische Heizstab eingeschraubt ist. 
