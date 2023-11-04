@@ -23,7 +23,7 @@ Eine Übersichtsversion der Platine ist mit Fritzing umgesetzt und enthält auch
 - ioBroker zur Ansteuerung (geht natürlich auch mit anderen SmartHome-Systemen, solange diese MQTT sprechen können)
 - ioBroker MGTT-Adapter
 - MQTT-Broker: z.B. mosquitto unter Linux/Debian/Raspian...
-- 230V Stromversorgung oder alternativ eine 5V Versorgung über z.B. ein USB-Ladegerät (muss 2 ESP32 sicher versorgen können -> 2A reicht völlig aus)
+- 230V Stromversorgung oder alternativ eine 5V Versorgung über z.B. ein USB-Ladegerät (muss 2 ESP32 sicher versorgen können -> 2A reicht völlig aus) oder über die Schraubklemmen anderweitig versorgt.
 
 **aktuelle Versionen:** <br>
 - ESP-Software    V2.0
