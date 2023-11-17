@@ -7,10 +7,10 @@
 #include <esp_task_wdt.h>
 
 #define LED_ERROR 23
+#define LED_MSG 22
 #define LED_OK 19
 #define ONE_WIRE_BUS 25
 static byte debug = 0;
-static String lastError = "";
 
 //Sicherheitsfunktionen
 int volatile hardwareError = 0; // Indikator, ob ein Sensordefekt erkannt wurde.
@@ -22,27 +22,25 @@ int volatile panicMode = 0;     // Indikator für die Zwangsabschaltung - ab jet
 #define PHASE_12V 18            // Steuerpin für Phase 5V Versorgung zum ESP32 Heizstabsteuerung
 
 // Definition der Zugangsdaten WiFi
-//const char* ssid     = "MS_Baunatal_Keller";
-//const char* password = "akp265DfTG7%";
-#define HOSTNAME "ESP32_Heizung_PowerGuard"
-const char* ssid = "RauchNetz";
-const char* password = "a{4JRs.WC,{s";
+#define HOSTNAME "ESP32_Heizung_PowerGuard2"
+const char* ssid = "MyNETWORK";
+const char* password = "MyPASSWORD";
 WiFiClient myWiFiClient;
 
 //Definition der Zugangsdaten MQTT
-#define MQTT_SERVER "192.168.2.127"
+#define MQTT_SERVER "MyIP"
 #define MQTT_PORT 1883
-#define MQTT_USER "mqttbroker"
-#define MQTT_PASSWORD "TimzQXqwqhWs5xX"
-#define MQTT_CLIENTID "ESP32_PowerGuard" //Name muss eineindeutig auf dem MQTT-Broker sein!
+#define MQTT_USER "My_ioBrokerUSER"
+#define MQTT_PASSWORD "My_ioBrokerPASSWORD"
+#define MQTT_CLIENTID "ESP32_PowerGuard2" //Name muss eineindeutig auf dem MQTT-Broker sein!
 #define MQTT_KEEPALIVE 90
 #define MQTT_SOCKETTIMEOUT 30
-#define MQTT_SERIAL_PUBLISH_STATUS "SmartHome/Keller/Heizung/ESP32_PowerGuard/status"
-#define MQTT_SERIAL_RECEIVER_COMMAND "SmartHome/Keller/Heizung/ESP32_PowerGuard/command"
-#define MQTT_SERIAL_PUBLISH_DS18B20 "SmartHome/Keller/Heizung/ESP32_PowerGuard/Temperatur/"
-#define MQTT_SERIAL_PUBLISH_STATE "SmartHome/Keller/Heizung/ESP32_PowerGuard/state/"
-#define MQTT_SERIAL_PUBLISH_CONFIG "SmartHome/Keller/Heizung/ESP32_PowerGuard/config/"
-#define MQTT_SERIAL_PUBLISH_BASIS "SmartHome/Keller/Heizung/ESP32_PowerGuard/"
+#define MQTT_SERIAL_PUBLISH_STATUS "SmartHome/Keller/Heizung/ESP32_PowerGuard2/status"
+#define MQTT_SERIAL_RECEIVER_COMMAND "SmartHome/Keller/Heizung/ESP32_PowerGuard2/command"
+#define MQTT_SERIAL_PUBLISH_DS18B20 "SmartHome/Keller/Heizung/ESP32_PowerGuard2/Temperatur/"
+#define MQTT_SERIAL_PUBLISH_STATE "SmartHome/Keller/Heizung/ESP32_PowerGuard2/state/"
+#define MQTT_SERIAL_PUBLISH_CONFIG "SmartHome/Keller/Heizung/ESP32_PowerGuard2/config/"
+#define MQTT_SERIAL_PUBLISH_BASIS "SmartHome/Keller/Heizung/ESP32_PowerGuard2/"
 String mqttTopic;
 String mqttJson;
 String mqttPayload;
@@ -319,26 +317,19 @@ void printStateMQTT() {
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("MQTT panicmode: ");
   if (debug > 2) Serial.println(mqttPayload);
-  //thermalLimit
+ //thermalLimit
   mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
   mqttTopic += "thermalLimit";
   mqttPayload = String(thermalLimit);
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("MQTT thermalLimit: ");
   if (debug > 2) Serial.println(mqttPayload);
-  // hardware Error
+ //thermalLimit
   mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
   mqttTopic += "hardwareError";
   mqttPayload = String(hardwareError);
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("MQTT hardwareError: ");
-  if (debug > 2) Serial.println(mqttPayload);
-  //lastError
-  mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
-  mqttTopic += "lastError";
-  mqttPayload = lastError;
-  mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
-  if (debug > 2) Serial.print("LastError: ");
   if (debug > 2) Serial.println(mqttPayload);
 }
 // MQTT Config und Parameter senden
@@ -359,9 +350,9 @@ void printConfigMQTT() {
 }
 //LED-Blik-OK
 void LEDblinkOK(){
-  digitalWrite(LED_OK, HIGH);
+  digitalWrite(LED_MSG, HIGH);
   delay(150);
-  digitalWrite(LED_OK, LOW);
+  digitalWrite(LED_MSG, LOW);
 }
 //-------------------------------------
 //MQTT-Status-Task
@@ -512,7 +503,6 @@ void termalLimits () {
       if (debug) Serial.println("°C am Top-Sensor #2)");
       //Temperatursensoren liefern unplausible Werte gegeneinander -> Defekt!
       hardwareError = 1;
-      lastError = "Zwangsabschaltung: unterschiedliche Sensorwerte (" + String(temp1) + "; " + String(temp2) + ")";
       panicStop();
     }
   }
@@ -527,7 +517,6 @@ void termalLimits () {
       if (debug) Serial.print("[");
       //Thermosensor 1 ist außerhalb des eingestellten Normbereichs -> Annahme Defekt!
       hardwareError = 1;
-      lastError = "Zwangsabschaltung: Verletzung der thermischen Grenzen " + String(temp1) + " -> [" + String(minTemp) +  " ... " + String(maxTemp) + "]";
       panicStop();
     }
   }
@@ -542,7 +531,6 @@ void termalLimits () {
       if (debug) Serial.print("[");
       //Thermosensor 2 ist außerhalb des eingestellten Normbereichs -> Annahme Defekt!
       hardwareError = 1;
-      lastError = "Zwangsabschaltung: Verletzung der thermischen Grenzen " + String(temp2) + " -> [" + String(minTemp) +  " ... " + String(maxTemp) + "]";
       panicStop();
     }
   }
@@ -555,7 +543,6 @@ void termalLimits () {
       if (debug) Serial.print(temp2);
       if (debug) Serial.println("°C am Top-Sensor #2.");
       //thermalstop = 1 -> 12V wird abgeschalten, damit die Relais keine Versorgung mehr haben können. 
-      lastError = "Thermal Stop: 12V abgeschaltet (" + String(temp1) + "; " + String(temp2) + ")";
       thermalStop();
     }
   }
@@ -568,7 +555,6 @@ void termalLimits () {
       if (debug) Serial.println("°C am Top-Sensor #2.");
       //thermalstop = 1 -> 12V wird abgeschalten, damit die Relais keine Versorgung mehr haben können. 
       //panicMode = 1 -> 5V des ESP32 zur Steuerung des Heizstabs wird abgeschalten - damit alle Spannungsversorgungen
-      lastError = "Thermal Stop: 5V und 12V abgeschaltet (" + String(temp1) + "; " + String(temp2) + ")";
       panicStop();
     }
   }
@@ -580,7 +566,6 @@ void termalLimits () {
       if (debug) Serial.print("°C am Top-Sensor #1 bzw. ");
       if (debug) Serial.print(temp2);
       if (debug) Serial.println("°C am Top-Sensor #2.");
-      lastError = "zurück im Normalbereich der Temperatur: reset der Heizstabelektornik";
       Heizstab_reboot();
     }
   }
@@ -593,7 +578,6 @@ void termalLimits () {
       if (debug) Serial.print("°C am Top-Sensor #1 bzw. ");
       if (debug) Serial.print(temp2);
       if (debug) Serial.println("°C am Top-Sensor #2.");
-      lastError = "zurück im Normalbereich der Temperatur: reset der Heizstabelektornik";
       Heizstab_reboot();
     }
   }
@@ -713,6 +697,8 @@ void setup() {
   Serial.println("Start Setup");
   pinMode(LED_ERROR, OUTPUT);
   digitalWrite(LED_ERROR, LOW);
+  pinMode(LED_MSG, OUTPUT);
+  digitalWrite(LED_MSG, HIGH);
   pinMode(LED_OK, OUTPUT);
   digitalWrite(LED_OK, HIGH);
   //Initialisierung der Phasenschalter L1-3
@@ -835,9 +821,9 @@ void setup() {
   assert(rc=pdPASS);
   Serial.println("MQTT-State-Task gestartet.");
   //OK-Blinker
-  digitalWrite(LED_OK, HIGH);
+  digitalWrite(LED_MSG, HIGH);
   delay(250);
-  digitalWrite(LED_OK, LOW);
+  digitalWrite(LED_MSG, LOW);
   Serial.println("Normalbetrieb gestartet...");
   //Startmeldung via MQTT
   String mqttTopicAC;
