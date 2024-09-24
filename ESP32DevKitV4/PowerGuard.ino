@@ -1,6 +1,3 @@
-// PowerGuard V1.02 
-// 02.10.2023Matthias Rauchschwalbe
-//
 //https://beelogger.de/sensoren/temperatursensor-ds18b20/ für Pinning und Anregung
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -13,6 +10,7 @@
 #define LED_OK 19
 #define ONE_WIRE_BUS 25
 static byte debug = 0;
+static String lastError = "-";
 
 //Sicherheitsfunktionen
 int volatile hardwareError = 0; // Indikator, ob ein Sensordefekt erkannt wurde.
@@ -25,15 +23,15 @@ int volatile panicMode = 0;     // Indikator für die Zwangsabschaltung - ab jet
 
 // Definition der Zugangsdaten WiFi
 #define HOSTNAME "ESP32_Heizung_PowerGuard"
-const char* ssid = "MyNETWORK";
-const char* password = "MyPASSWORD";
+const char* ssid = "YourSSID";
+const char* password = "YourPassword";
 WiFiClient myWiFiClient;
 
 //Definition der Zugangsdaten MQTT
-#define MQTT_SERVER "MyIP"
+#define MQTT_SERVER "Your MQTT BrokerIP"
 #define MQTT_PORT 1883
-#define MQTT_USER "My_ioBrokerUSER"
-#define MQTT_PASSWORD "My_ioBrokerPASSWORD"
+#define MQTT_USER "MQTT broker user"
+#define MQTT_PASSWORD "Your MQTT Password"
 #define MQTT_CLIENTID "ESP32_PowerGuard" //Name muss eineindeutig auf dem MQTT-Broker sein!
 #define MQTT_KEEPALIVE 90
 #define MQTT_SOCKETTIMEOUT 30
@@ -52,18 +50,22 @@ unsigned long MQTTReconnect = 0;
 PubSubClient mqttClient(myWiFiClient);
 
 // Anzahl der angeschlossenen DS18B20 - Sensoren
-int DS18B20_Count = 0; //Anzahl der erkannten DS18B20-Sensoren
+int DS18B20_Count = 0;            //Anzahl der erkannten DS18B20-Sensoren
 //Sensorsetting (Ausgabe im Debugmodus (debug = 3) auf dem serial Monitor)
-float volatile temp1 = 0.0; //Sensor in Slot 2
-float volatile temp2 = 0.0; //Sensor in Slot 3
-float tempLimit = 90.0;     //Ab dieser Temperatur wir 12V abgeschalten und thermalLimit = 1
-float tempReconnect = 80.0; //Ab dieser Temperatur thermalLimit = 0 und panicMode = 0 zurückgesetzt -> ESP32 Heizstabsteuerung boot neu nach PanicMode / bei thermalLimit wird kurz 5V abgeschaltet und der Neustart erzwungen..
-float tempMaxLimit = 95.0;  //Panik-Abschaltung ab dieser Temperatur = 5V und 12V abschalten und thermalLimit = 1 & panicMode = 1
-float tempHysterese = 2.0;  //bei Unterschreitung von (tmpLimit-tempHysterese)  
-float deltaT = 2.0;         //Limit des Betrags von Differenz zwischen tempTop1 tempTop2 (|tempTop1-tempTop2|)
-float minTemp = 10.0;       //untere Plausibilitätsgrenze für Temperatursignale. Bei Unterschreitung => Notabschaltung, da ggf. Sensor defekt
-float maxTemp = 100.0;      //obere Plausibilitätsgrenze für Temperatursignale. Bei Überschreitung => Notabschaltung, da ggf. Sensor defekt
- 
+float volatile temp1 = 0.0;       //Sensor in Slot 2
+float volatile temp2 = 0.0;       //Sensor in Slot 3
+float tempLimit = 90.0;           //Ab dieser Temperatur wir 12V abgeschalten und thermalLimit = 1
+float tempReconnect = 80.0;       //Ab dieser Temperatur thermalLimit = 0 und panicMode = 0 zurückgesetzt -> ESP32 Heizstabsteuerung boot neu nach PanicMode / bei thermalLimit wird kurz 5V abgeschaltet und der Neustart erzwungen..
+float tempMaxLimit = 95.0;        //Panik-Abschaltung ab dieser Temperatur = 5V und 12V abschalten und thermalLimit = 1 & panicMode = 1
+float tempHysterese = 2.0;        //bei Unterschreitung von (tmpLimit-tempHysterese)  
+float deltaT = 2.0;               //Limit des Betrags von Differenz zwischen tempTop1 tempTop2 (|tempTop1-tempTop2|)
+float minTemp = 10.0;             //untere Plausibilitätsgrenze für Temperatursignale. Bei Unterschreitung => Notabschaltung, da ggf. Sensor defekt
+float maxTemp = 100.0;            //obere Plausibilitätsgrenze für Temperatursignale. Bei Überschreitung => Notabschaltung, da ggf. Sensor defekt
+int volatile tempTSensorFail = 0; //Fehlercounter zur Temperaturmessung - Resilienz gegen gelegentliche Fehlauswertungen der Temperatursensoren
+int maxTSensorFail = 3;           //maximal zulässige, hinereinander folgende Sensorfehler - danach panicStop
+float DS18B20_minValue = -55.0;   //unterster Messwert im Messbereich [°C]
+float DS18B20_maxValue = 125.0;   //unterster Messwert im Messbereich [°C]
+
 //Initialisiere OneWire und Thermosensor(en)
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature myDS18B20(&oneWire);
@@ -309,7 +311,10 @@ void printStateMQTT() {
   mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
   mqttTopic += "JSON";
   mqttJson = "{\"panicMode\":\"" + String(panicMode) + "\"";
-  mqttJson += ",\"thermalLimit\":\"" + String(thermalLimit) + "\"}";
+  mqttJson += ",\"thermalLimit\":\"" + String(thermalLimit) + "\"";
+  mqttJson += ",\"hardwareError\":\"" + String(hardwareError) + "\"";
+  mqttJson += ",\"lastError\":\"" + String(lastError) + "\"";
+  mqttJson += ",\"WiFi_Signal_Strength\":\"" + String(WiFi.RSSI()) + "\"}";
   if (debug > 2) Serial.println("MQTT_JSON: " + mqttJson);
   mqttClient.publish(mqttTopic.c_str(), mqttJson.c_str());
   //panicMode
@@ -319,19 +324,33 @@ void printStateMQTT() {
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("MQTT panicmode: ");
   if (debug > 2) Serial.println(mqttPayload);
- //thermalLimit
+  //thermalLimit
   mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
   mqttTopic += "thermalLimit";
   mqttPayload = String(thermalLimit);
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("MQTT thermalLimit: ");
   if (debug > 2) Serial.println(mqttPayload);
- //thermalLimit
+  // hardware Error
   mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
   mqttTopic += "hardwareError";
   mqttPayload = String(hardwareError);
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("MQTT hardwareError: ");
+  if (debug > 2) Serial.println(mqttPayload);
+  //lastError
+  mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
+  mqttTopic += "lastError";
+  mqttPayload = String(lastError);
+  mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
+  if (debug > 2) Serial.print("LastError: ");
+  if (debug > 2) Serial.println(mqttPayload);
+  //WiFi Signalstärke
+  mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
+  mqttTopic += "WiFi_Signal_Strength";
+  mqttPayload = WiFi.RSSI();
+  mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
+  if (debug > 2) Serial.print("WiFi Signalstärke: ");
   if (debug > 2) Serial.println(mqttPayload);
 }
 // MQTT Config und Parameter senden
@@ -404,14 +423,13 @@ void mqttConnect () {
   Serial.print(" wird aufgebaut ");  
   while (!mqttClient.connected()) {
     Serial.print(".");
-    i++;
     if (mqttClient.connect(MQTT_CLIENTID, MQTT_USER, MQTT_PASSWORD, MQTT_SERIAL_PUBLISH_STATUS, 0, true, "false")) {
       mqttClient.publish(MQTT_SERIAL_PUBLISH_STATUS, "true", true);
       Serial.println("");
       Serial.print("MQTT verbunden!");
     } 
     else {
-      if (i > 20) {
+      if (++i > 20) {
         Serial.println("MQTT scheint nicht mehr erreichbar! Reboot!!");
         ESP.restart();
       }
@@ -473,8 +491,28 @@ static void MQTTwatchdog (void *args){
 
 //-------------------------------------
 //Subfunktionen für den TempSensor-Task
+// Temperatursensorenwerte auf die Limits prüfen
+bool checkDS18B20Value (float t){
+  bool res = true;     // true = im Messbereich; false = außerhalb des Messbereichs
+  if ((t < DS18B20_minValue) || (t > DS18B20_maxValue)){
+    //Sensorwert außerhalb des Messbereichs
+    res = false;
+  }
+  if (debug > 2) Serial.print("Prüfe t-Wert auf Gültigkeit: ");
+  if (debug > 2) Serial.print(t);
+  if (debug > 2) Serial.print("°C [");
+  if (debug > 2) Serial.print(DS18B20_minValue);
+  if (debug > 2) Serial.print(",");
+  if (debug > 2) Serial.print(DS18B20_maxValue);
+  if (debug > 2) Serial.print("]; Ergebnis: ");
+  if (debug > 2) Serial.println(res);
+  return res;
+}
 // Temperatursensoren auslesen
 void readDS18B20() {
+  float t1 = 0.0;
+  float t2 = 0.0;
+  bool res = false;
   if (debug > 2) Serial.print("Anfrage der Temperatursensoren... ");
   myDS18B20.requestTemperatures();  //Anfrage zum Auslesen der Temperaturen
   if (debug > 2) Serial.println("fertig");
@@ -488,8 +526,41 @@ void readDS18B20() {
       Adresse += String(myDS18B20Address[j], HEX);
       if (j < 7) Adresse += ", ";
     }
-    if (i == 0) temp1 = myDS18B20.getTempCByIndex(i);
-    if (i == 1) temp2 = myDS18B20.getTempCByIndex(i);
+    if (i == 0) t1 = myDS18B20.getTempCByIndex(i);
+    if (i == 1) t2 = myDS18B20.getTempCByIndex(i);
+  }
+  //Plausibilitätscheck
+  if (checkDS18B20Value(t1)) {
+    temp1 = t1;
+    res = true;
+  }
+  else {
+    ++tempTSensorFail;
+    res = false;
+    mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
+    mqttTopic += "lastError";
+    mqttPayload = "Temperatursensor T1 außerhalb des Messbereichts: " + String(t1) + "[C]; Wiederholung: " + String(tempTSensorFail);
+    mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
+    if (debug > 2) Serial.print("LastError: ");
+    if (debug > 2) Serial.println(mqttPayload); //(debug > 2)
+  }
+  if (checkDS18B20Value(t2)) {
+    temp2 = t2;
+    if (res) tempTSensorFail = 0;  //t1 und t2 sind korrekt => Fehlercounter auf 0 gesetzt
+  }
+  else {
+    ++tempTSensorFail;
+    res = false;
+    mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
+    mqttTopic += "lastError";
+    mqttPayload = "Temperatursensor T2 außerhalb des Messbereichts: " + String(t2) + "[C]; Wiederholung: " + String(tempTSensorFail);
+    mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
+    if (debug > 2) Serial.print("LastError: ");
+    if (debug > 2) Serial.println(mqttPayload);
+  }
+  if (tempTSensorFail > maxTSensorFail) {
+    Serial.println("zu viele Fehler (out of range) beim Auslesen der DS18B20! Reboot!!");
+    ESP.restart();
   }
 }
 //Thermale Limits prüfen und ggf. reagieren
@@ -506,6 +577,7 @@ void termalLimits () {
       if (debug) Serial.println("°C am Top-Sensor #2)");
       //Temperatursensoren liefern unplausible Werte gegeneinander -> Defekt!
       hardwareError = 1;
+      lastError = "Zwangsabschaltung: unterschiedliche Sensorwerte (" + String(temp1) + "; " + String(temp2) + ")";
       panicStop();
     }
   }
@@ -520,6 +592,7 @@ void termalLimits () {
       if (debug) Serial.print("[");
       //Thermosensor 1 ist außerhalb des eingestellten Normbereichs -> Annahme Defekt!
       hardwareError = 1;
+      lastError = "Zwangsabschaltung: Verletzung der thermischen Grenzen " + String(temp1) + " -> [" + String(minTemp) +  " ... " + String(maxTemp) + "]";
       panicStop();
     }
   }
@@ -534,6 +607,7 @@ void termalLimits () {
       if (debug) Serial.print("[");
       //Thermosensor 2 ist außerhalb des eingestellten Normbereichs -> Annahme Defekt!
       hardwareError = 1;
+      lastError = "Zwangsabschaltung: Verletzung der thermischen Grenzen " + String(temp2) + " -> [" + String(minTemp) +  " ... " + String(maxTemp) + "]";
       panicStop();
     }
   }
@@ -546,6 +620,7 @@ void termalLimits () {
       if (debug) Serial.print(temp2);
       if (debug) Serial.println("°C am Top-Sensor #2.");
       //thermalstop = 1 -> 12V wird abgeschalten, damit die Relais keine Versorgung mehr haben können. 
+      lastError = "Thermal Stop: 12V abgeschaltet (" + String(temp1) + "; " + String(temp2) + ")";
       thermalStop();
     }
   }
@@ -558,17 +633,19 @@ void termalLimits () {
       if (debug) Serial.println("°C am Top-Sensor #2.");
       //thermalstop = 1 -> 12V wird abgeschalten, damit die Relais keine Versorgung mehr haben können. 
       //panicMode = 1 -> 5V des ESP32 zur Steuerung des Heizstabs wird abgeschalten - damit alle Spannungsversorgungen
+      lastError = "Thermal Stop: 5V und 12V abgeschaltet (" + String(temp1) + "; " + String(temp2) + ")";
       panicStop();
     }
   }
   if ((thermalLimit == 1) && (panicMode == 1) && (hardwareError == 0)) {
-    //Prüfung, ob die Temperatur unter TempReconnect gefallen ist - falls ja Reboot ESP32 Heizstabsteuerung dur 5V ein
+    //Prüfung, ob die Temperatur unter TempReconnect gefallen ist - falls ja, Reboot ESP32 Heizstabsteuerung zur 5V ein
     if ((temp1 < tempReconnect) && (temp2 < tempReconnect)) {
       if (debug) Serial.print("Thermische Zuschalten nach PanicMode: ");
       if (debug) Serial.print(temp1);
       if (debug) Serial.print("°C am Top-Sensor #1 bzw. ");
       if (debug) Serial.print(temp2);
       if (debug) Serial.println("°C am Top-Sensor #2.");
+      lastError = "zurück im Normalbereich der Temperatur: reset der Heizstabelektornik";
       Heizstab_reboot();
     }
   }
@@ -581,6 +658,7 @@ void termalLimits () {
       if (debug) Serial.print("°C am Top-Sensor #1 bzw. ");
       if (debug) Serial.print(temp2);
       if (debug) Serial.println("°C am Top-Sensor #2.");
+      lastError = "zurück im Normalbereich der Temperatur: reset der Heizstabelektornik";
       Heizstab_reboot();
     }
   }
@@ -777,7 +855,12 @@ void setup() {
   int app_cpu = xPortGetCoreID();
   BaseType_t rc;
   esp_err_t er;
-  er = esp_task_wdt_init(300,true);  //restart nach 5min = 300s Inaktivität einer der 4 überwachten Tasks 
+  esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = 300000,  // 5 Minuten = 300000 ms
+    .idle_core_mask = (1 << 1),  // Nur Kerne 1 überwachen
+    .trigger_panic = true
+  };
+  er = esp_task_wdt_reconfigure(&wdt_config);  //restart nach 5min = 300s Inaktivität einer der 4 überwachten Tasks 
   assert(er == ESP_OK); 
   rc = xTaskCreatePinnedToCore(
     getTempFromSensor,         //Taskroutine
