@@ -26,7 +26,7 @@ Eine Übersichtsversion der Platine ist mit Fritzing umgesetzt und enthält auch
 - 230V Stromversorgung oder alternativ eine 5V Versorgung über z.B. ein USB-Ladegerät (muss 2 ESP32 sicher versorgen können -> 2A reicht völlig aus) oder über die Schraubklemmen anderweitig versorgt.
 
 **aktuelle Versionen:** <br>
-- ESP-Software    V2.0
+- ESP-Software    V2.x
 - PCB (Eagle) 	   V2.0
 - CAM             V1.0
 - BOM             V1.0
