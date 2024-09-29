@@ -1,7 +1,7 @@
 # PowerGuard
 PowerGuard-Platine und Software zur Sicherheitsüberwachung einer Heizstabsteuerung
 
-- ESP-Software    V1.02
+- ESP-Software    V1.x
 - PCB (Eagle) 	V1.0
 - Fritzing		V1.0
  
