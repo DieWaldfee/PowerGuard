@@ -45,22 +45,22 @@ unsigned long MQTTReconnect = 0;
 PubSubClient mqttClient(myWiFiClient);
 
 // Anzahl der angeschlossenen DS18B20 - Sensoren
-int DS18B20_Count = 0; //Anzahl der erkannten DS18B20-Sensoren
+int DS18B20_Count = 0;            //Anzahl der erkannten DS18B20-Sensoren
 //Sensorsetting (Ausgabe im Debugmodus (debug = 3) auf dem serial Monitor)
-float volatile temp1 = 0.0; //Sensor in Slot 2
-float volatile temp2 = 0.0; //Sensor in Slot 3
-float tempLimit = 90.0;     //Ab dieser Temperatur wir 12V abgeschalten und thermalLimit = 1
-float tempReconnect = 80.0; //Ab dieser Temperatur thermalLimit = 0 und panicMode = 0 zurückgesetzt -> ESP32 Heizstabsteuerung boot neu nach PanicMode / bei thermalLimit wird kurz 5V abgeschaltet und der Neustart erzwungen..
-float tempMaxLimit = 95.0;  //Panik-Abschaltung ab dieser Temperatur = 5V und 12V abschalten und thermalLimit = 1 & panicMode = 1
-float tempHysterese = 2.0;  //bei Unterschreitung von (tmpLimit-tempHysterese)  
-float deltaT = 2.0;         //Limit des Betrags von Differenz zwischen tempTop1 tempTop2 (|tempTop1-tempTop2|)
-float minTemp = 10.0;       //untere Plausibilitätsgrenze für Temperatursignale. Bei Unterschreitung => Notabschaltung, da ggf. Sensor defekt
-float maxTemp = 100.0;      //obere Plausibilitätsgrenze für Temperatursignale. Bei Überschreitung => Notabschaltung, da ggf. Sensor defekt
+float volatile temp1 = 0.0;       //Sensor in Slot 2
+float volatile temp2 = 0.0;       //Sensor in Slot 3
+float tempLimit = 90.0;           //Ab dieser Temperatur wir 12V abgeschalten und thermalLimit = 1
+float tempReconnect = 80.0;       //Ab dieser Temperatur thermalLimit = 0 und panicMode = 0 zurückgesetzt -> ESP32 Heizstabsteuerung boot neu nach PanicMode / bei thermalLimit wird kurz 5V abgeschaltet und der Neustart erzwungen..
+float tempMaxLimit = 95.0;        //Panik-Abschaltung ab dieser Temperatur = 5V und 12V abschalten und thermalLimit = 1 & panicMode = 1
+float tempHysterese = 2.0;        //bei Unterschreitung von (tmpLimit-tempHysterese)  
+float deltaT = 2.0;               //Limit des Betrags von Differenz zwischen tempTop1 tempTop2 (|tempTop1-tempTop2|)
+float minTemp = 10.0;             //untere Plausibilitätsgrenze für Temperatursignale. Bei Unterschreitung => Notabschaltung, da ggf. Sensor defekt
+float maxTemp = 100.0;            //obere Plausibilitätsgrenze für Temperatursignale. Bei Überschreitung => Notabschaltung, da ggf. Sensor defekt
 int volatile tempTSensorFail = 0; //Fehlercounter zur Temperaturmessung - Resilienz gegen gelegentliche Fehlauswertungen der Temperatursensoren
 int maxTSensorFail = 3;           //maximal zulässige, hinereinander folgende Sensorfehler - danach panicStop
 float DS18B20_minValue = -55.0;   //unterster Messwert im Messbereich [°C]
 float DS18B20_maxValue = 125.0;   //unterster Messwert im Messbereich [°C]
- 
+
 //Initialisiere OneWire und Thermosensor(en)
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature myDS18B20(&oneWire);
@@ -326,7 +326,7 @@ void printStateMQTT() {
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("MQTT thermalLimit: ");
   if (debug > 2) Serial.println(mqttPayload);
-  //hardware Error
+  //Hardware Error
   mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
   mqttTopic += "hardwareError";
   mqttPayload = String(hardwareError);
@@ -336,7 +336,7 @@ void printStateMQTT() {
   //lastError
   mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
   mqttTopic += "lastError";
-  mqttPayload = lastError;
+  mqttPayload = String(lastError);
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("LastError: ");
   if (debug > 2) Serial.println(mqttPayload);
@@ -636,7 +636,7 @@ void termalLimits () {
     }
   }
   if ((thermalLimit == 1) && (panicMode == 1) && (hardwareError == 0)) {
-    //Prüfung, ob die Temperatur unter TempReconnect gefallen ist - falls ja Reboot ESP32 Heizstabsteuerung dur 5V ein
+    //Prüfung, ob die Temperatur unter TempReconnect gefallen ist - falls ja, Reboot ESP32 Heizstabsteuerung zur 5V ein
     if ((temp1 < tempReconnect) && (temp2 < tempReconnect)) {
       if (debug) Serial.print("Thermische Zuschalten nach PanicMode: ");
       if (debug) Serial.print(temp1);
