@@ -5,6 +5,7 @@
 #include <WiFiClient.h>
 #include <PubSubClient.h>
 #include <esp_task_wdt.h>
+#include "secrets.h"
 
 #define LED_ERROR 23
 #define LED_OK 19
@@ -22,16 +23,9 @@ int volatile panicMode = 0;     // Indikator für die Zwangsabschaltung - ab jet
 #define PHASE_12V 18            // Steuerpin für Phase 5V Versorgung zum ESP32 Heizstabsteuerung
 
 // Definition der Zugangsdaten WiFi
-#define HOSTNAME "ESP32_Heizung_PowerGuard"
-const char* ssid = "YourSSID";
-const char* password = "YourPassword";
 WiFiClient myWiFiClient;
 
 //Definition der Zugangsdaten MQTT
-#define MQTT_SERVER "Your MQTT BrokerIP"
-#define MQTT_PORT 1883
-#define MQTT_USER "MQTT broker user"
-#define MQTT_PASSWORD "Your MQTT Password"
 #define MQTT_CLIENTID "ESP32_PowerGuard" //Name muss eineindeutig auf dem MQTT-Broker sein!
 #define MQTT_KEEPALIVE 90
 #define MQTT_SOCKETTIMEOUT 30
@@ -331,7 +325,7 @@ void printStateMQTT() {
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("MQTT thermalLimit: ");
   if (debug > 2) Serial.println(mqttPayload);
-  // hardware Error
+  //Hardware Error
   mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
   mqttTopic += "hardwareError";
   mqttPayload = String(hardwareError);
@@ -473,6 +467,9 @@ static void MQTTwatchdog (void *args){
 
   //ticktime initialisieren
   ticktime = xTaskGetTickCount();
+
+  er = esp_task_wdt_add(NULL);   // Task zur Überwachung hinzugefügt  
+  assert(er == ESP_OK); 
 
   for (;;){                        // Dauerschleife des Tasks
     // Watchdog zurücksetzen
@@ -747,6 +744,9 @@ static void getTempFromSensor (void *args){
   //ticktime initialisieren
   ticktime = xTaskGetTickCount();
 
+  er = esp_task_wdt_add(NULL);   // Task zur Überwachung hinzugefügt  
+  assert(er == ESP_OK); 
+
   for (;;){                        // Dauerschleife des Tasks
     // Watchdog zurücksetzen
     esp_task_wdt_reset();
@@ -797,8 +797,7 @@ void setup() {
   WiFi.begin(ssid,password);
   while (WiFi.status() != WL_CONNECTED)
   {
-    ++i;
-    if (i > 240) {
+    if (++i > 240) {
       // Reboot nach 2min der Fehlversuche
       Serial.println("WLAN scheint nicht mehr erreichbar! Reboot!!");
       ESP.restart();
@@ -871,12 +870,6 @@ void setup() {
     &htempSensor,              //handler
     app_cpu);                  //CPU_ID
   assert(rc=pdPASS);
-  er = esp_task_wdt_status(htempSensor);  // Check, ob der Task schon überwacht wird
-  assert(er == ESP_ERR_NOT_FOUND);
-  if (er == ESP_ERR_NOT_FOUND) {
-    er = esp_task_wdt_add(htempSensor);   // Task zur Überwachung hinzugefügt  
-    assert(er == ESP_OK); 
-  }
   Serial.println("TempSensor-Task gestartet.");
   rc = xTaskCreatePinnedToCore(
     MQTTwatchdog,              //Taskroutine
@@ -887,12 +880,6 @@ void setup() {
     &hMQTTwatchdog,            //handler
     app_cpu);                  //CPU_ID
   assert(rc=pdPASS);
-  er = esp_task_wdt_status(hMQTTwatchdog);  // Check, ob der Task schon überwacht wird
-  assert(er == ESP_ERR_NOT_FOUND);
-  if (er == ESP_ERR_NOT_FOUND) {
-    er = esp_task_wdt_add(hMQTTwatchdog);   // Task zur Überwachung hinzugefügt  
-    assert(er == ESP_OK); 
-  }
   Serial.println("MQTT-Watchdog-Task gestartet.");
   rc = xTaskCreatePinnedToCore(
     MQTTstate,                 //Taskroutine
