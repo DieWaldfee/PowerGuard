@@ -308,7 +308,9 @@ void printStateMQTT() {
   mqttJson += ",\"thermalLimit\":\"" + String(thermalLimit) + "\"";
   mqttJson += ",\"hardwareError\":\"" + String(hardwareError) + "\"";
   mqttJson += ",\"lastError\":\"" + String(lastError) + "\"";
-  mqttJson += ",\"WiFi_Signal_Strength\":\"" + String(WiFi.RSSI()) + "\"}";
+  mqttJson += ",\"WiFi_Signal_Strength\":\"" + String(WiFi.RSSI()) + "\"";
+  mqttJson += ",\"WiFi_IP_Adress\":\"" + WiFi.localIP().toString() + "\"";
+  mqttJson += ",\"WiFi_MAC_Adress\":\"" + WiFi.macAddress() + "\"}";
   if (debug > 2) Serial.println("MQTT_JSON: " + mqttJson);
   mqttClient.publish(mqttTopic.c_str(), mqttJson.c_str());
   //panicMode
@@ -345,6 +347,20 @@ void printStateMQTT() {
   mqttPayload = WiFi.RSSI();
   mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
   if (debug > 2) Serial.print("WiFi Signalstärke: ");
+  if (debug > 2) Serial.println(mqttPayload);
+  //WiFi IP-Adresse
+  mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
+  mqttTopic += "WiFi_IP_Adress";
+  mqttPayload = WiFi.localIP().toString();
+  mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
+  if (debug > 2) Serial.print("WiFi IP-Adresse: ");
+  if (debug > 2) Serial.println(mqttPayload);
+  //WiFi MAC-Adresse
+  mqttTopic = MQTT_SERIAL_PUBLISH_STATE;
+  mqttTopic += "WiFi_MAC_Adress";
+  mqttPayload = WiFi.macAddress();
+  mqttClient.publish(mqttTopic.c_str(), mqttPayload.c_str());
+  if (debug > 2) Serial.print("WiFi MAC-Adresse: ");
   if (debug > 2) Serial.println(mqttPayload);
 }
 // MQTT Config und Parameter senden
