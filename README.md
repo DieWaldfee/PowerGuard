@@ -70,3 +70,8 @@ Zugehöriges Projekt: https://github.com/users/DieWaldfee/projects/1
 
 ![grafik](https://github.com/DieWaldfee/PowerGuard/assets/66571311/cb0928ba-aea0-4322-a46b-0f89a735b46d)
 (oberes Relais steuert +5V -> Heizstabsteuerung; unteres Relais steuert die 12V für die SSR-40-DA Lastschaltrelais)
+
+**Haftungsausschluss**<br>
+Deutsch: Dieses Projekt arbeitet mit Netzspannung (220 V) und darf ausschließlich von qualifiziertem Fachpersonal aufgebaut, installiert und betrieben werden. Durch die anliegende Spannung besteht Lebensgefahr! Fehler in Schaltung oder Software können zu Sachschäden (z. B. an Gebäude oder Heizung) oder zu gefährlichen Situationen für Leib und Leben führen. Nutzung auf eigene Gefahr – jegliche Haftung wird ausgeschlossen.
+<br>
+English: This project operates with mains voltage (220 V) and must only be assembled, installed, and operated by qualified professionals. The present voltage poses a risk of fatal electric shock! Errors in circuitry or software may cause property damage (e.g., to buildings or heating systems) or create life-threatening situations. Use at your own risk – any liability is disclaimed.
