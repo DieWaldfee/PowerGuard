@@ -25,6 +25,22 @@ Eine Übersichtsversion der Platine ist mit Fritzing umgesetzt und enthält auch
 - MQTT-Broker: z.B. mosquitto unter Linux/Debian/Raspian...
 - 230V Stromversorgung oder alternativ eine 5V Versorgung über z.B. ein USB-Ladegerät (muss 2 ESP32 sicher versorgen können -> 2A reicht völlig aus) oder über die Schraubklemmen anderweitig versorgt.
 
+### Abhängigkeiten:
+OneWire.h:_____________OneWire by Jim Studt, Tom Pollard, Robin James... v2.3.8 (über Arduino IDE)<br>
+DallasTemperature.h:___DallasTemperature by Miles Burton v4.0.3 (über Arduino IDE)<br>
+WiFi.h:________________Arduino IDE<br>
+WiFiClient.h:__________Arduino IDE<br>
+PubSubClient.h:________PubSubClient by Nick O'Leary v2.8 (über Arduino IDE) [also tested with PubSubClient3 V3.2.1]<br>
+Wire.h:________________by Jim Studt, Tom Pollard, Robiun James... v2.3.8 (über Arduino IDE)<br>
+LiquidCrystal_I2C.h:___LiquidCrystal_I2C by Frank de Brabander v1.1.4 (https://github.com/marcoschwartz/LiquidCrystal_I2C)<br>
+EmonLib.h:_____________EmonLib by OpenEnergyMonitor v1.1.0 (über Arduino IDE)<br>
+esp_task_wdt.h:________Espressif IDE<br>
+
+### Board ESP32
+esp32 by Espressif Systems v1.0.6 (über Arduino IDE)<br>
+Achtung: v1.0.6 ist im Zusammenspiel mit emonlib erforderlich!<br>
+Getestet habe ich auch v2.0.5 - hier sind Änderungen ver der ADC-Steuerung integriert, die scheinbar keinen Einfluss auf die Steuerung mit emonlib haben.<br>
+
 **aktuelle Versionen:** <br>
 - ESP-Software    V2.x
 - PCB (Eagle) 	   V2.0
