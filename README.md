@@ -32,13 +32,11 @@ WiFi.h:________________Arduino IDE<br>
 WiFiClient.h:__________Arduino IDE<br>
 PubSubClient.h:________PubSubClient by Nick O'Leary v2.8 (über Arduino IDE) [also tested with PubSubClient3 V3.2.1]<br>
 Wire.h:________________by Jim Studt, Tom Pollard, Robiun James... v2.3.8 (über Arduino IDE)<br>
-EmonLib.h:_____________EmonLib by OpenEnergyMonitor v1.1.0 (über Arduino IDE)<br>
 esp_task_wdt.h:________Espressif IDE<br>
 
 ### Board ESP32
 esp32 by Espressif Systems v1.0.6 (über Arduino IDE)<br>
-Achtung: v1.0.6 ist im Zusammenspiel mit emonlib erforderlich!<br>
-Getestet habe ich auch v2.0.5 - hier sind Änderungen ver der ADC-Steuerung integriert, die scheinbar keinen Einfluss auf die Steuerung mit emonlib haben.<br>
+Getestet habe ich auch v2.0.5<br>
 
 **aktuelle Versionen:** <br>
 - ESP-Software    V2.x
