@@ -32,7 +32,6 @@ WiFi.h:________________Arduino IDE<br>
 WiFiClient.h:__________Arduino IDE<br>
 PubSubClient.h:________PubSubClient by Nick O'Leary v2.8 (über Arduino IDE) [also tested with PubSubClient3 V3.2.1]<br>
 Wire.h:________________by Jim Studt, Tom Pollard, Robiun James... v2.3.8 (über Arduino IDE)<br>
-LiquidCrystal_I2C.h:___LiquidCrystal_I2C by Frank de Brabander v1.1.4 (https://github.com/marcoschwartz/LiquidCrystal_I2C)<br>
 EmonLib.h:_____________EmonLib by OpenEnergyMonitor v1.1.0 (über Arduino IDE)<br>
 esp_task_wdt.h:________Espressif IDE<br>
 
