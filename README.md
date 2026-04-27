@@ -12,10 +12,11 @@ Die beiden Werte werden einerseits verglichen und andererseits benutzt, um die P
 Der PowerGuard hat 2 Möglichkeiten dies zu tun: <br>
 (1) die 5V Versorgung des ESP32 der Heizstabsteuerung abzuschalten -> die Relais werden nicht mehr angesteuert - unabhängig vom Fehlerbild. <br>
 (2) die 12V Versorgungsspannung der Lastschaltrelais (SSR siehe Heizstabsteuerung) wird abgeschaltet -> die Heizstabsteuerung bleibt aktiv, kann aber nichts mehr schalten. <p>
-Die Kommunikation mit dem ESP32 wird über WiFi abgewickelt und über das Protokoll MQTT umgesetzt. Es stehen mehrere Befehle zur Verfügung, die ebenfalls via MQTT an den ESP gesendet werden kann. Neben "restart" (führt zu einem Neutstart des ESP32) kann die ganze Konfiguration un der debug-Level angepasst werden. Alle Anpassungen sind nach einem Neustart verlohren, da diese nicht permanet gespeichter werden (aber neue Parameter flashen geht ja fix). Befehle werden unter der MQTT-Hierarchie in folgendem Ort empfangen: "SmartHome/Keller/Heizung/ESP32_PowerGuard2/command" (MQTT_SERIAL_RECEIVER_COMMAND)
+Die Kommunikation mit dem ESP32 wird über WiFi abgewickelt und über das Protokoll MQTT umgesetzt. Es stehen mehrere Befehle zur Verfügung, die ebenfalls via MQTT an den ESP gesendet werden kann. Neben "restart" / "reboot" (führt zu einem Neustart des ESP32) kann die ganze Konfiguration und der debug-Level angepasst werden. Alle Anpassungen sind nach einem Neustart verloren, da diese nicht permanent gespeichert werden. Befehle werden unter der MQTT-Hierarchie in folgendem Ort empfangen: `SmartHome/Keller/Heizung/ESP32_PowerGuard/command` (MQTT_SERIAL_RECEIVER_COMMAND)
 
 **Entwicklungsumgebungen:** <br>
-Die Software für den ESP32 habe ich in der Arduino-IDE geschrieben. Hier wird der ESP als Board ausgewählt (ggf. muss das Board noch nachinstalliert werden). Compile und flash sind hier per Knopfdruck möglich. Die Installation ist sehr einfach und manigfaltig im Netz dokumentiert.<br>
+Die aktuelle Software (V2.x) für den ESP32 wird mit **PlatformIO** entwickelt (z. B. in VS Code mit dem PlatformIO-Plugin). Die Konfiguration des Projekts befindet sich in der Datei `platformio.ini`; Compilieren und Flashen erfolgen direkt über PlatformIO.<br>
+Die historische Erstversion (V1.0) wurde in der **Arduino-IDE** erstellt und ist im Unterordner `V1.0/` archiviert.<br>
 Die Platine (PCB) habe ich in Eagle von AutoCAD modelliert. Für Maker gibt es eine kostenfreie Version. Die CAM-Daten (PCB-Produktionsdaten), sowie die BOM (Stückliste) sind ebenfalls aus Eagle ausgegeben.
 Eine Übersichtsversion der Platine ist mit Fritzing umgesetzt und enthält auch einige Notizen zur Pinbelegung.<br>
 
@@ -25,21 +26,36 @@ Eine Übersichtsversion der Platine ist mit Fritzing umgesetzt und enthält auch
 - MQTT-Broker: z.B. mosquitto unter Linux/Debian/Raspian...
 - 230V Stromversorgung oder alternativ eine 5V Versorgung über z.B. ein USB-Ladegerät (muss 2 ESP32 sicher versorgen können -> 2A reicht völlig aus) oder über die Schraubklemmen anderweitig versorgt.
 
-### Abhängigkeiten:
-OneWire.h:_____________OneWire by Jim Studt, Tom Pollard, Robin James... v2.3.8 (über Arduino IDE)<br>
-DallasTemperature.h:___DallasTemperature by Miles Burton v4.0.3 (über Arduino IDE)<br>
-WiFi.h:________________Arduino IDE<br>
-WiFiClient.h:__________Arduino IDE<br>
-PubSubClient.h:________PubSubClient by Nick O'Leary v2.8 (über Arduino IDE) [also tested with PubSubClient3 V3.2.1]<br>
-Wire.h:________________by Jim Studt, Tom Pollard, Robiun James... v2.3.8 (über Arduino IDE)<br>
-esp_task_wdt.h:________Espressif IDE<br>
+### Abhängigkeiten (PlatformIO / `platformio.ini`):
+OneWire:_______________PaulStoffregen/OneWire (git-master) – v2.3.7 inkompatibel mit ESP-IDF 5.x; v2.3.8 buggy<br>
+DallasTemperature:_____milesburton/DallasTemperature v4.0.4<br>
+PubSubClient:__________knolleary/PubSubClient v2.8<br>
+WiFi.h / esp_task_wdt:_Espressif Arduino-Framework (via pioarduino platform-espressif32)<br>
 
-### Board ESP32
-esp32 by Espressif Systems v1.0.6 (über Arduino IDE)<br>
-Getestet habe ich auch v2.0.5<br>
+### Board / Plattform (PlatformIO):
+platform: pioarduino platform-espressif32 v55.03.38-1 (ESP-IDF 5.x)<br>
+board: esp32dev<br>
+framework: arduino<br>
+
+**Hardware-Version (PCB V1.0 vs. V2.0):**<br>
+In `platformio.ini` kann die Hardware-Version über ein Build-Flag gesetzt werden:<br>
+```
+build_flags = -DHARDWARE_VERSION=2   ; für PCB V2.0 (mit MSG-LED an Pin 22)
+```
+Ohne Build-Flag wird V1.0-Verhalten angenommen (kein MSG-LED, Blink auf OK-LED).<br>
+
+| PIN | V1.0 | V2.0 |
+|-----|------|------|
+| 19  | LED OK (grün) | LED OK (grün) |
+| 22  | – | LED MSG (gelb) |
+| 23  | LED ERROR (rot) | LED ERROR (rot) |
+| 25  | DS18B20 OneWire Bus | DS18B20 OneWire Bus |
+| 32  | PHASE 5V (Heizstabsteuerung) | PHASE 5V (Heizstabsteuerung) |
+| 18  | PHASE 12V (SSR-Relaisversorgung) | PHASE 12V (SSR-Relaisversorgung) |
 
 **aktuelle Versionen:** <br>
-- ESP-Software    V2.x
+- ESP-Software    V2.x (PlatformIO, `src/PowerGuard.cpp`)
+- ESP-Software    V1.0 (Arduino IDE, archiviert in `V1.0/PowerGuard.ino`)
 - PCB (Eagle) 	   V2.0
 - CAM             V1.0
 - BOM             V1.0
@@ -54,18 +70,66 @@ In der BOM findet sich die Stückliste für die Bestückung wieder.
 Zugehöriges Projekt: https://github.com/users/DieWaldfee/projects/1
 
 **Installation:**
-* Hostname, WLAN-SSID + WLAN-Passwort setzen in /ESP32DevKitV4/PowerGuard.ino <br>
-&nbsp;&nbsp;&nbsp;<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/75a4b105-765c-4cfd-9f36-0deae3ae548b" width="300">
-* MQTT-Brokereinstellungen setzen in /ESP32DevKitV4/PowerGuard.ino <br>
-&nbsp;&nbsp;&nbsp;<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/897f06d6-190b-4414-a3dd-f5e2cfde511d" height="100">
-* MQTT-Pfade setzen in /ESP32DevKitV4/PowerGuard.ino <br>
+* Zugangsdaten in `/src/secrets.h` eintragen (Hostname, WLAN-SSID, WLAN-Passwort, MQTT-Server, MQTT-Port, MQTT-User, MQTT-Passwort)
+* Hardware-Version in `platformio.ini` als Build-Flag setzen (`-DHARDWARE_VERSION=2` für PCB V2.0, weglassen für V1.0)
+* MQTT-Pfade sind in `src/PowerGuard.cpp` als `#define` hinterlegt und können dort angepasst werden<br>
 &nbsp;&nbsp;&nbsp;<img src="https://github.com/DieWaldfee/PowerGuard/assets/66571311/4f8c1ffd-b743-4ed1-b313-fc14fc3ef089" height="100">
-* bei Fehlern kann in Zeile 13 der Debug-Level für die Ausgaben auf den serial Monitor eingestellt werden: 0 = BootUp only; 1 = Basic; 2 = Advanced; 3 = Absolut
-* ESP-Software wird über die Arduino-IDE aus das "ESP32 Dev Kit V4" compiliert und übertragen.
+* Debug-Level kann via MQTT-Befehl `debug=0` … `debug=3` zur Laufzeit gesetzt werden (0 = Boot only; 1 = Basic; 2 = Advanced; 3 = Absolut); alternativ im Quellcode in Zeile 14 von `src/PowerGuard.cpp`
+* ESP-Software wird über PlatformIO compiliert und auf das „ESP32 Dev Kit V4" geflasht.
 * Platine entweder via Eagle an PCB-Hersteller übermitteln, oder das fertige CAM-File über die Anbieter-Webseite senden. (z.B. an https://jlcpcb.com)
 * Platine bestücken + ESP und Level-Shifter (3.3V <-> 5V) aufsetzen.
 * Relais anschließen.
 * 12V Versorgung der Heizstabsteuerung wird über LED-Treiber realisiert.
+
+### MQTT-Steuerbefehle
+
+Befehle werden auf dem Topic **`SmartHome/Keller/Heizung/ESP32_PowerGuard/command`** empfangen.<br>
+Bestätigungen erscheinen auf **`SmartHome/Keller/Heizung/ESP32_PowerGuard/ac`**.
+
+| Befehl | Beschreibung | Antwort (ac-Topic) |
+|--------|-------------|---------------------|
+| `Test` | Verbindungstest | `Test OK` |
+| `debug=0` … `debug=3` | Debug-Level setzen (0=Boot only, 1=Basic, 2=Advanced, 3=Absolut) | `debug=X umgesetzt` |
+| `panicMode=0` | Panic-Modus zurücksetzen; Heizstabsteuerung neu starten (wenn thermalLimit=0) | `panicMode=0 umgesetzt` |
+| `panicMode=1` | Panic-Abschaltung auslösen (5V + 12V aus) | `panicMode=1 umgesetzt` |
+| `hardwareError=0` | Hardware-Fehler-Flag zurücksetzen | `hardwareError=0 umgesetzt` |
+| `hardwareError=1` | Hardware-Fehler setzen → Panic-Abschaltung | `hardwareError=1 umgesetzt` |
+| `thermalLimit=0` | Thermisches Limit zurücksetzen; Heizstabsteuerung neu starten (wenn panicMode=0 und hardwareError=0) | `thermalLimit=0 umgesetzt` |
+| `thermalLimit=1` | Thermische Abschaltung auslösen (12V aus) | `thermalLimit=1 umgesetzt` |
+| `tempLimit=<Wert>` | Abschalttemperatur 12V [°C] (Standard: 90,0) | `tempLimit=<Wert> umgesetzt` |
+| `tempMaxLimit=<Wert>` | Panic-Abschalttemperatur 5V+12V [°C] (Standard: 95,0) | `tempMaxLimit=<Wert> umgesetzt` |
+| `tempReconnect=<Wert>` | Wiedereinschalttemperatur [°C] (Standard: 80,0) | `tempReconnect=<Wert> umgesetzt` |
+| `deltaT=<Wert>` | Max. zulässige Differenz zwischen den beiden Sensoren [K] (Standard: 2,0) | `deltaT=<Wert> umgesetzt` |
+| `minTemp=<Wert>` | Untere Plausibilitätsgrenze [°C] (Standard: 10,0) | `minTemp=<Wert> umgesetzt` |
+| `maxTemp=<Wert>` | Obere Plausibilitätsgrenze [°C] (Standard: 100,0) | `maxTemp=<Wert> umgesetzt` |
+| `restart` oder `reboot` | ESP32 neu starten (Ausgänge werden vorher abgeschaltet) | `reboot in einer Sekunde!` |
+
+> **Hinweis:** Alle Parameteränderungen sind flüchtig und gehen nach einem Neustart verloren.
+
+### MQTT-Statustopics (veröffentlicht, alle 60 s)
+
+Basis-Pfad: `SmartHome/Keller/Heizung/ESP32_PowerGuard/`
+
+| Topic (relativ zum Basis-Pfad) | Inhalt | Retain |
+|-------------------------------|--------|--------|
+| `status` | Online-Status: `true` / `false` (LWT) | ja |
+| `ac` | Befehlsbestätigungen | nein |
+| `error` | Fehlermeldungen / Reconnect-Infos | ja |
+| `Temperatur/0/JSON` | Sensor 0 komplett als JSON | nein |
+| `Temperatur/0/Temperatur` | Temperatur Sensor 0 [°C] | nein |
+| `Temperatur/0/ID` | Sensor-Index 0 | nein |
+| `Temperatur/0/Adresse` | 1-Wire-Adresse Sensor 0 | nein |
+| `Temperatur/0/Ort` | Ortsbezeichnung Sensor 0 | nein |
+| `Temperatur/1/…` | Gleiche Subtopics für Sensor 1 | nein |
+| `state/JSON` | Systemzustand komplett als JSON | nein |
+| `state/panicMode` | Panic-Mode Flag (0/1) | nein |
+| `state/thermalLimit` | Thermal-Limit Flag (0/1) | nein |
+| `state/hardwareError` | Hardware-Fehler Flag (0/1) | nein |
+| `state/lastError` | Letzter Fehler als Klartext | nein |
+| `state/WiFi_Signal_Strength` | WiFi-Signalstärke [dBm] | nein |
+| `state/WiFi_IP_Adress` | IP-Adresse | nein |
+| `state/WiFi_MAC_Adress` | MAC-Adresse | nein |
+| `config/JSON_0` | Konfigurationsparameter als JSON | nein |
 
 **Bezugsquellen:**
 * Platinennetzteil AC-05-3    <a href="https://www.azdelivery.de/products/copy-of-220v-zu-5v-mini-netzteil"> AZ-Delivery </a>
