@@ -16,4 +16,7 @@ const char* password = "DEIN_WLAN_PASSWORT";
 #define MQTT_USER "mqttbroker"
 #define MQTT_PASSWORD "DEIN_MQTT_PASSWORT"
 
+// Hardwareauswahl: Lochrasterplatine 1 oder Print-Platine 2
+#define HARDWARE_VERSION 2  // 1 = V1.0 (OK+ERROR), 2 = V2.0 (OK+MSG+ERROR)
+
 #endif // SECRETS_H
