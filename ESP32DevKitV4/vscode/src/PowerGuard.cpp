@@ -382,11 +382,17 @@ void printConfigMQTT() {
   if (debug > 2) Serial.println("MQTT_JSON: " + mqttJson);
   mqttPublishQueue(mqttTopic.c_str(), mqttJson.c_str(),false);
 }
-//LED-Blik-OK
-void LEDblinkOK(){
+// LED-Blik-MSG
+void LEDblinkMSG() {
+#if HARDWARE_VERSION >= 2
   digitalWrite(LED_MSG, HIGH);
   delay(150);
   digitalWrite(LED_MSG, LOW);
+#else
+  digitalWrite(LED_OK, HIGH);  // V1.0: kein MSG-LED, Blink auf OK-LED
+  delay(150);
+  digitalWrite(LED_OK, LOW);
+#endif
 }
 //-------------------------------------
 //MQTT-Status-Task
@@ -429,7 +435,7 @@ static void MQTTstate (void *args){
     if (debug > 1) Serial.println("Stack frei MQTTstate: " + String(uxTaskGetStackHighWaterMark(NULL) * 4) + " Bytes");
 
     // Task schlafen legen
-    LEDblinkOK();
+    LEDblinkMSG();
     vTaskDelayUntil(&ticktime, MQTT_STATE_REFRESH);
   }
 }
@@ -900,8 +906,10 @@ void setup() {
   while (!Serial) Serial.println("Start Setup");
   pinMode(LED_ERROR, OUTPUT);
   digitalWrite(LED_ERROR, HIGH);
+#if HARDWARE_VERSION >= 2
   pinMode(LED_MSG, OUTPUT);
   digitalWrite(LED_MSG, HIGH);
+#endif
   pinMode(LED_OK, OUTPUT);
   digitalWrite(LED_OK, HIGH);
   //Initialisierung der Phasenschalter L1-3
@@ -1036,9 +1044,10 @@ void setup() {
   // OK-Blinker / alle LEDs nach erfolgreichem Boot ausschalten
   digitalWrite(LED_ERROR, LOW);
   digitalWrite(LED_OK, LOW);
-  digitalWrite(LED_MSG, HIGH);
   delay(250);
-  digitalWrite(LED_MSG, LOW);
+  digitalWrite(LED_OK, HIGH);
+  delay(250);
+  digitalWrite(LED_OK, LOW);
   Serial.println("Normalbetrieb gestartet...");
   //Startmeldung via MQTT
   String mqttTopicAC;
